@@ -4,13 +4,13 @@ Created on Mar 29, 2017
 @author: Navendu Sinha
 '''
 
-class MyClass(object):
+class AutomationApplication(object):
     '''
     classdocs
     '''
 
 
-    def __init__(self, params):
+    def __init__(self, sprocessName, designid):
         '''
         Constructor
         '''
