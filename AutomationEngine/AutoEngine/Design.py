@@ -7,12 +7,7 @@ This has been written in a dictionary format to allow a simple verbose structure
 Created on Mar 29, 2017
 @author: nsinha
 '''
-
-# define an empty Statistical process container
-sprocess = {}
-
-# define list of process steps
-sprocess['process'] = {'AProcess1'}
+from AutoEngine.AutomationSequence import ProcessSequenceStep
 
 
 class Design(object):
@@ -20,14 +15,25 @@ class Design(object):
     """
     __designId = None
     __processList = None
+    processIdentifier = None
+    processAutomationSteps = {}
 
-    def __init__(self, designIdName, sprocess=["A1"]):
+    def __init__(self):
         """
         + designId : 
         + sprocess : 
         """
         self.__processList = []
+        self.processIdentifier = {}
+
+    def setDesignIdName(self, designIdName, sprocess=["A1"]):
+        """
+        Set design id name
+        """
         self.__designId = DesignIdentifier(designIdName)
+
+        # Adds the default process ids
+
         for sproc in sprocess:
             self.__processList.append(sproc)
 
@@ -36,6 +42,51 @@ class Design(object):
         Adds a process name to the design
         """
         self.__processList.append(processName)
+        self.processAutomationSteps[
+            processName] = ProcessSequenceStep(processname=processName)
+
+    def addProcessStepName(self, processName, stepName):
+        """
+        Adds a process name to the design
+        """
+        self.processAutomationSteps[
+            processName] = ProcessSequenceStep(processname=processName)
+
+    def setProcessIdentifierName(self, idx):
+        """
+        Sets the process identifier name
+        """
+        self.processIdentifier[idx] = None
+
+    def setProcessIdentifier(self, idx, value):
+        """
+        Sets the process identifier name
+        """
+        self.processIdentifier[idx] = value
+
+    def getProcessIndentifier(self, idx):
+        """
+        Returns the Process Identifier value corresponding to id
+        """
+        return self.processIdentifier[idx]
+
+    def getProcessNames(self):
+        """
+        Returns a list of process names
+        """
+        return self.__processList
+
+    def getProcessIdentifiers(self):
+        """
+        Returns the process identifiers for the process
+        """
+        return self.processIdentifier
+
+    def getProcessSeqeunceSteps(self):
+        """
+        Returns the dict of Process Sequence Steps
+        """
+        return self.processAutomationSteps
 
 
 class DesignIdentifier(object):
@@ -94,15 +145,21 @@ class ProcessIdentifiers(object):
     Process Identifier class
     """
 
-    __uniqueid = None
+    __uniqueid = []
 
-    def __init__(self, uniqueid):
+    def __init__(self):
         """
         + uniqueid : This is the unique id of which identifies the unit
         """
-        self.__uniqueid = uniqueid
+        pass
 
-    def getUniqueId(self):
+    def addProcessId(self, processId):
+        """
+        Defines the uniqueProcessId and if it is mandatory
+        """
+        self.__uniqueid.append(processId)
+
+    def getProcessIdList(self):
         """
         Returns the UniqueId for the design
         """
