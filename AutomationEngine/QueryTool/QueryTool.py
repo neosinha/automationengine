@@ -128,11 +128,10 @@ class QueryTool(object):
         return json.dumps(logs)
 
 
-
     @QueryServer.expose
     def processlogcmd(self, sprocess, pnnum, starttime, serialnum, cmd):
         """
-        This function will get the log for a serialnum at a specfic starttime
+        This function will get the cmds for a serialnum at a specfic starttime
         + sprocess - the db we will be using
         + pnnum - part number within the db, this is dynamic depending on DB structure
         + starttime - start time of serialnum
@@ -161,4 +160,34 @@ class QueryTool(object):
 
         return json.dumps(logs)
 
+
+    @QueryServer.expose
+    def processlogbufferregex(self, sprocess, pnnum, starttime, serialnum, regex):
+        """
+        This function will get the objext for a serialnum at a specfic starttime that matches
+        the regular expression provided
+        + sprocess - the db we will be using
+        + pnnum - part number within the db, this is dynamic depending on DB structure
+        + starttime - start time of serialnum
+        + serialnum - product indentifier
+        + regex - regular expression
+        """
+
+        print "Initializing Process Log Buffer REGEX Query"
+
+        dbquery = {'processid.fstarttime': str(starttime),
+                   'processid.serialnum': serialnum,
+                   'content.response.buffer': {'$regex': regex}}
+
+        self._db = self.client[sprocess]
+        coll = self._db[pnnum]
+
+        logs = []
+
+        print dbquery
+
+        for dbentry in coll.find(dbquery):
+            logs.append(str(dbentry))
+
+        return json.dumps(logs)
 
