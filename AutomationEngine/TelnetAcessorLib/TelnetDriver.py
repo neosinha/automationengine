@@ -11,7 +11,6 @@ import time
 import datetime
 import re
 
-
 class TelnetDriver(object):
     '''
     Wrapper for telnetlib. Shouldn't be called directly, use TelnetAccessor
@@ -43,8 +42,7 @@ class TelnetDriver(object):
         self._ip = console.split(':')[0]
         self._port = int(console.split(':')[1])
 
-        self.debug("Attempting to open connection with IP: '%s' Port: '%s'" % (
-            self._ip, self._port))
+        self.debug("Attempting to open connection with IP: '%s' Port: '%s'" % (self._ip, self._port))
         self.t.open(self._ip, self._port)
         self.debug("Session opened!")
 
@@ -89,6 +87,9 @@ class TelnetDriver(object):
         if not isinstance(matchlist, list):
             matchlist = list(matchlist)
 
+        # convert timeout to milliseconds
+        timeout *= 1000
+
         # define list of dictionaries;
         # list insures order is perserved rather than
         # sorting down the road...
@@ -106,8 +107,8 @@ class TelnetDriver(object):
         for regex in matchlist:
             compiled_regex.append(re.compile(regex))
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
+        start_time = self.get_time()
+        while self.get_time() - start_time < timeout:
             buf = self.t.read_very_eager()
             if buf:
                 # create list of lines associated with buffer
@@ -120,15 +121,14 @@ class TelnetDriver(object):
                 last_line_buf = buf_list[last_idx]
 
                 # buffer to remember
-                # timestamp = str(datetime.datetime.now())
-                timestamp = str(int(round(time.time() * 1000)))
+                timestamp = self.get_time()
                 running_buf.append({timestamp: []})
                 # search each line in most recent buf for regex match
                 # don't search last line because it is incomplete,
                 # last line is appended to start of first line of next buf
                 for i in range(len(buf_list)):
                     # don't append last item
-                    if i < last_idx:
+                    if i < last_idx:                     
                         running_buf[tidx][timestamp].append(buf_list[i])
 
                     # iterate thru matchlist to look for matches in this line
@@ -139,20 +139,26 @@ class TelnetDriver(object):
                             # don't forget to append last line we were saving
                             running_buf[tidx][timestamp].append(last_line_buf)
                             return {'buffer': running_buf,
-                                    'xtime': time.time() - start_time,
+                                    'xtime': self.get_time() - start_time,
                                     'midx': idx,
-                                    'mobj': mobj}
+                                    'mobj': mobj} 
 
                 tidx += 1
 
-        xtime = time.time() - start_time
-        return {'buffer': running_buf, 'xtime': xtime, 'midx': midx, 'mobj': mobj}
+        xtime = self.get_time()() - start_time
+        return {'buffer': running_buf, 'xtime': xtime, 'midx': midx, 'mobj': mobj}     
 
     def close(self):
         """
         Close opened session
         """
         self.t.close()
+
+    def get_time(self):
+        """
+        Returns integer time in milliseconds
+        """
+        return int(time.time() * 1000)
 
     def debug(self, msg):
         """
