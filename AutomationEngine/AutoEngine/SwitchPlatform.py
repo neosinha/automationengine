@@ -46,9 +46,12 @@ class SwitchPlatform(Design):
         seqStep.addSequenceStep("Goto Pageless",
                                 CommandObject(cmdstr='skip', timeout=3, prompt='NetIron.*#'))
 
-        pext = ParseExtract('version', 'IronWare.:.Version(.*)Copyright')
-        pext.addparser('mbridge', 'MBRIDGE.Revision.:.(.*)')
-        pext.addparser('serialnum', 'Module.Active..Serial #:\s(.*),')
+        pext = ParseExtract(
+            'version', 'IronWare.:.Version(.*)Copyright', '5.7.0bT163')
+        pext.addparser('mbridge', 'MBRIDGE.Revision.:.(.*)', '37')
+        pext.addparser(
+            'serialnum', 'Module.Active..Serial #:\s(.*),',
+            'BVR3810M999')
 
         # define the show version command
         cmdObj = CommandObject(cmdstr='show version',

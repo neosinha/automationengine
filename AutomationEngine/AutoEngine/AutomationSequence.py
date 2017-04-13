@@ -83,10 +83,13 @@ class ParseExtract(object):
     regular expressions
     """
     _regex_dict = {}
+    _expect_dict = {}
 
-    def __init__(self, key=None, regex=None):
+    def __init__(self, key=None, regex=None, expect=None):
         if key is not None:
             self._regex_dict[key] = regex
+            if expect is not None:
+                self._expect_dict[key] = expect
 
     def getparseextract(self):
         """
@@ -94,7 +97,7 @@ class ParseExtract(object):
         """
         return self._regex_dict
 
-    def addparser(self, key, regex):
+    def addparser(self, key, regex, expect):
         """
         Add regular expression to be stored
         and called upon during parsing activity.
@@ -105,6 +108,7 @@ class ParseExtract(object):
         - regex - regular expression
         """
         self._regex_dict[key] = re.compile(regex)
+        self._expect_dict[key] = expect
 
     def extract(self, buffer, *keys):
         """
@@ -151,9 +155,16 @@ class ParseExtract(object):
             if regexresult:
                 # length of groups will indicate last item to group and return
                 num_groups = len(regexresult.groups())
-                returndict[key] = regexresult.group(num_groups)
+                matchState = False
+                if regexresult.group(num_groups) == self._expect_dict[key]:
+                    matchState = True
 
-        # print "Keys: %s" % (returndict)
+                returndict[key] = {
+                    'value': str(regexresult.group(num_groups)).strip(),
+                    'match': matchState
+                }
+
+        print "Keys: %s" % (returndict)
         return returndict
 
 # def test_parse_extract():
