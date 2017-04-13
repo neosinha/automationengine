@@ -35,20 +35,28 @@ class AutomationApplication(object):
         """
         """
         # self.tsession.sendexpect()
-        print "%s ==> " % (self.uut.getProcessSeqeunceSteps())
-        for cmd in self.uut.getCommands():
-            print "==> %s" % (cmd.getCommand())
-            data = cmd.getCommand()['cmd']
-            matchlist = [cmd.getCommand()['prompt']]
-            timeout = cmd.getCommand()['timeout']
-            resp = self.tsession.sendexpect(data=data,
-                                            matchlist=matchlist,
-                                            timeout=timeout)
+        # print "%s ==> " % (self.uut.getAutoSeqeunceSteps())
+        for stepName in self.uut.getAutoSequenceSteps():
+            print "SequenceName: %s" % (stepName)
+            stepObj = self.uut.getAutoSequenceSteps()[stepName]
+            for step, cmdobj in stepObj.getSequenceSteps().items():
+                print "\tCommandObj: %s, %s" % (step, cmdobj.getCommand())
+                # print "%s " %
+                # (self.uut.getAutoSequenceSteps()[stepName].getCommand())
+
+        # for cmd in self.uut.getCommands():
+        #    print "==> %s" % (cmd.getCommand())
+            # data = cmd.getCommand()['cmd']
+            # matchlist = [cmd.getCommand()['prompt']]
+            # timeout = cmd.getCommand()['timeout']
+            # resp = self.tsession.sendexpect(data=data,
+            #                                matchlist=matchlist,
+            #                                timeout=timeout)
             # print buff['timeout_occured']
             # print buff['buffer']
-            cmdobj = {'cmdobject': cmd.getCommand(), 'response': resp}
-            print "==> %s" % (cmdobj)
-            self.logger.logcmd(cmdobj)
+            # cmdobj = {'cmdobject': cmd.getCommand(), 'response': resp}
+            # print "==> %s" % (cmdobj)
+            # self.logger.logcmd(cmdobj)
 
 if __name__ == "__main__":
 

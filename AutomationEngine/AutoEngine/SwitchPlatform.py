@@ -25,13 +25,10 @@ class SwitchPlatform(Design):
         self.addProcessName("A2")
         self.setProcessIdentifierName("serialnum")
         self.setProcessIdentifierName("partnum")
-        self.setProcessIdentifierName("partnum2")
 
-        self.__init_processes()
+        # self.__init_processes()
         self.loadCommands()
-        print "==> %s" % (self.getProcessIdentifiers())
-        for id in self.getProcessIdentifiers().keys():
-            print "Id: ==> %s" % (id)
+        self.defineTestSteps()
 
     def __init_processes(self):
         """
@@ -39,6 +36,18 @@ class SwitchPlatform(Design):
         """
         for pname in self.getProcessNames():
             self.autoSequenceSteps[pname] = []
+
+    def versionCheckSteps(self):
+        """
+        """
+        seqStep = SequenceStep("CheckVersion")
+        seqStep.addSequenceStep("Goto Privilleged prompt",
+                                CommandObject(cmdstr='en', timeout=3, prompt='NetIron.*>'))
+        seqStep.addSequenceStep("Goto Pageless",
+                                CommandObject(cmdstr='skip', timeout=3, prompt='NetIron.*#'))
+        seqStep.addSequenceStep("Show chassis",
+                                CommandObject(cmdstr='show chassis', timeout=3, prompt='NetIron.*#'), )
+        self.autoSequenceSteps["versioncheck"] = seqStep
 
     def loadCommands(self):
         """
@@ -54,6 +63,11 @@ class SwitchPlatform(Design):
             CommandObject(cmdstr='show chassis', timeout=30, prompt='NetIron.*#'))
         self.commands.append(
             CommandObject(cmdstr='show version', timeout=30, prompt='NetIron.*#'))
+
+    def getAutoSequenceSteps(self):
+        """
+        """
+        return self.autoSequenceSteps
 
     def getCommands(self):
         """

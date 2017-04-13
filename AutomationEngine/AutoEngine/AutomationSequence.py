@@ -43,11 +43,20 @@ class SequenceStep(object):
     __name = None
     __cmdObject = OrderedDict()
 
+    parsedict = None
+
     def __init__(self, sequenceName=None):
         '''
         Constructor
         '''
         self.__name = sequenceName
+        self.parsedict = {}
+
+    def addParseExtract(self, varname, regexp):
+        """
+        Add a ParseExtract Object
+        """
+        self.parsedict[varname] = regexp
 
     def addSequenceStep(self, stepName, cmdObject):
         """
