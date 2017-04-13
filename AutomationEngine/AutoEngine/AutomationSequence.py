@@ -5,6 +5,7 @@ Created on Mar 30, 2017
 '''
 
 from collections import OrderedDict
+import re
 
 
 class ProcessSequenceStep(object):
@@ -69,6 +70,76 @@ class SequenceStep(object):
         Returns the SequenceStep steps ordered dictionary
         """
         return self.__cmdObject
+
+
+class ParseExtract(object):
+    """
+    Handle buffer parsing from pre-defined
+    regular expressions
+    """
+    _regex_dict = {}
+    
+    def __init__(self):
+        pass
+    
+    def addparser(self, key, regex):
+        """
+        Add regular expression to be stored
+        and called upon during parsing activity.
+        
+        After defining regex, use extract for matching
+        
+        + key - name of regex
+        - regex - regular expression
+        """
+        self._regex_dict[key] = re.compile(regex)
+        
+    def extract(self, buffer, *keys):
+        """
+        Extract regex from buffer from predefined
+        key using re.search()
+        
+        Returns dictionary in format of {key: matchtext}
+        
+        If regex included group(s), matchtext will be last
+        group matched
+        """
+        returndict = {}
+
+        for key in keys:
+            returndict[key] = None
+
+            if key not in self._regex_dict:
+                continue
+
+            regexresult = re.search(self._regex_dict[key], buffer)
+
+            if regexresult:
+                # length of groups will indicate last item to group and return
+                num_groups = len(regexresult.groups())
+                returndict[key] = regexresult.group(num_groups)
+
+        return returndict
+
+
+# def test_parse_extract():
+#     buffer = """
+#         hi this is james and this
+#         is my test_parse_extract module code.
+#         version = 10.125.3:A2
+#         we can create regex's and take action
+#         based on the key value defined
+#         by the user
+#     """
+#     parse = ParseExtract()
+#      
+#     parse.addparser('james', 'hi.this.*(ja.es)')
+#     parse.addparser('version', 'version.=.(.*)')
+#     parse.addparser('module', 'module')
+#      
+#     print parse.extract(buffer, 'james', 'version', 'module')
+#      
+# test_parse_extract()
 
 
 class CommandObject(object):

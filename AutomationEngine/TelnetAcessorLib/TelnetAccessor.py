@@ -7,15 +7,13 @@ Created on Mar 23, 2017
 """
 
 import TelnetDriver
-import datetime
-
+import time
 
 class TelnetAccessor(object):
     """
     Encompasses Send, Expect, SendExpect, Logging to DB with Timestamp
     """
-
-    __logger = None
+    matchobj = None
 
     def __init__(self, debugFlag=False):
         """
@@ -24,14 +22,9 @@ class TelnetAccessor(object):
         """
         self.t = TelnetDriver.TelnetDriver(debugFlag=debugFlag)
 
-    def set_logger(self, logger):
-        """
-        Passes the logger object handle
-        """
-        self.__logger = logger
-
     def open_console(self, console):
         self.t.open(console)
+
 
     def close_console(self, console):
         self.t.close(console)
@@ -44,37 +37,17 @@ class TelnetAccessor(object):
         self.t.debug('Sending: %r' % data)
         self.t.send(data)
 
-    def expect_old(self, matchlist, timeout=5):
+    def getlastmatchobj(self):
         """
-        Arguments -
-        + matchlist - regex or list of regex's to match against
-        + timeout - seconds before timeout occurs
-        Returns tupple dictionary with following keys:
-        + 'matchidx' - index of item matched from argument matchlist
-        + 'matchobj' - MatchObject; see documentation re.MatchObject
-        + 'matchtext' - raw string that pattern matched against
-        + 'buffer' - buffer captured between start of expect call and timeout/match
-        + 'timeout_occured' - True or False
-
+        Returns last RE match object
         """
-        idx, mobj, buf = self.t.expect(matchlist, timeout)
+        return self.matchobj
 
-        returndict = {}
-
-        timeout = True
-        mtext = None
-        if idx != -1:
-            timeout = False
-            # fetch entire match
-            mtext = mobj.group(0)
-
-        returndict['matchidx'] = idx
-        returndict['matchobj'] = mobj
-        returndict['matchtext'] = mtext
-        returndict['buffer'] = buf
-        returndict['timeout_occured'] = timeout
-
-        return returndict
+    def setmatchobj(self, matchobj):
+        """
+        Set RE match object for query
+        """
+        self.matchobj = matchobj
 
     def expect(self, matchlist, timeout=5):
         """
@@ -107,7 +80,7 @@ class TelnetAccessor(object):
                 buffer += '\n'
 
         # remove last new line that was applied in excess above
-        buffer = buffer[:-2]
+        buffer = buffer[:-1]
 
         timeout = True
         mtext = None
@@ -115,6 +88,8 @@ class TelnetAccessor(object):
             timeout = False
             # fetch entire match
             mtext = expobj['mobj'].group(0)
+
+        self.setmatchobj(expobj['mobj'])
 
         returndict['matchidx'] = expobj['midx']
         # returndict['matchobj'] = expobj['mobj']
@@ -157,7 +132,7 @@ class TelnetAccessor(object):
     def __debug_expect(self, exp_retrn_dict):
         """
         Print out expect return values
-        """
+        """        
         self.t.set_debug_flag(True)
         self.t.debug('------------------------------')
         for key, value in exp_retrn_dict.iteritems():
@@ -176,20 +151,17 @@ class TelnetAccessor(object):
 
         for cmd_dict_list in buflist:
             # connect cmd sequence lastline w/ firstline
-            cmd_dict_list[0].values()[0][0] = lastline + \
-                cmd_dict_list[0].values()[0][0]
-            # get lastline of cmd sequence to tie to first line of next
-            # sequence
+            cmd_dict_list[0].values()[0][0] = lastline + cmd_dict_list[0].values()[0][0]
+            # get lastline of cmd sequence to tie to first line of next sequence
             lastline = cmd_dict_list[-1].values()[0].pop()
 
             for bufobj in cmd_dict_list:
                 for timestamp, buf_list in bufobj.iteritems():
                     for idx in range(len(buf_list)):
-                        print timestamp + '\t%s' % buf_list[idx]
+                        print '%s\t%s' % (timestamp, buf_list[idx])
 
-        # don't forget to print lastline that we are storing
-        print timestamp + '\t%s' % lastline
-
+        # don't forget to print lastline that we are storing               
+        print '%s\t%s' % (timestamp, lastline)
 
 def logmsg(msg):
     """
@@ -208,17 +180,21 @@ def usermsg(msg):
 
 
 def gettimestamp():
-    return datetime.datetime.now()
+    """
+    Returns int of epoch in milliseconds
+    """
+    # return datetime.datetime.now()
+    return int(time.time() * 1000)
 
 
-def test(console='10.31.248.147:3009'):
+def test(console='10.31.248.186:3016'):
     usermsg('Testing User Message!')
     logmsg('Testing log Message!')
 
     # prints output of all expect return values
     # to provide support for debugging
     debugFlag = False
-
+    
     session = TelnetAccessor(debugFlag=debugFlag)
     session.open_console(console)
 
@@ -231,14 +207,13 @@ def test(console='10.31.248.147:3009'):
 
     logmsg('Testing sendexpect_list...')
 
-    data_list = ['exit', 'en', 'skip', 'show media']
+    data_list = ['exit', 'en', 'skip', 'show version']
 
-    results = session.sendexpect_list(
-        data_list, ['not_a_match', 'Net.*4X'], timeout=15, debug=debugFlag)
+    results = session.sendexpect_list(data_list, ['not_a_match', 'Router'], timeout=15, debug=debugFlag)
 
     session.print_log_with_timestamps(results)
 
     usermsg('Done!')
     logmsg('Done!')
 
-# test()
+test()
