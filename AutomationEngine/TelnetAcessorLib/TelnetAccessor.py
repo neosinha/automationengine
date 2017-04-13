@@ -39,7 +39,7 @@ class TelnetAccessor(object):
 
     def getlastmatchobj(self):
         """
-        Returns last RE match object
+        Returns last RE match object from expect
         """
         return self.matchobj
 
