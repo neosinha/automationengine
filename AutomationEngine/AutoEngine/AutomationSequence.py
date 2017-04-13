@@ -65,6 +65,11 @@ class SequenceStep(object):
         """
         self.__cmdObject[stepName] = cmdObject
 
+    def getSequenceStep(self, stepName):
+        """
+        Returns the Sequence step object corresponding to stepname 
+        """
+
     def getSequenceSteps(self):
         """
         Returns the SequenceStep steps ordered dictionary
@@ -78,29 +83,36 @@ class ParseExtract(object):
     regular expressions
     """
     _regex_dict = {}
-    
-    def __init__(self):
-        pass
-    
+
+    def __init__(self, key=None, regex=None):
+        if key is not None:
+            self._regex_dict[key] = regex
+
+    def getparseextract(self):
+        """
+        Returns the dict of the parse extract defintions
+        """
+        return self._regex_dict
+
     def addparser(self, key, regex):
         """
         Add regular expression to be stored
         and called upon during parsing activity.
-        
+
         After defining regex, use extract for matching
-        
+
         + key - name of regex
         - regex - regular expression
         """
         self._regex_dict[key] = re.compile(regex)
-        
+
     def extract(self, buffer, *keys):
         """
         Extract regex from buffer from predefined
         key using re.search()
-        
+
         Returns dictionary in format of {key: matchtext}
-        
+
         If regex included group(s), matchtext will be last
         group matched
         """
@@ -121,6 +133,28 @@ class ParseExtract(object):
 
         return returndict
 
+    def extractkeys(self, buffer):
+        """
+        Extract regex from buffer from predefined
+        key using re.search()
+
+        Returns dictionary in format of {key: matchtext}
+
+        If regex included group(s), matchtext will be last
+        group matched
+        """
+        returndict = {}
+
+        for key in self._regex_dict.keys():
+            regexresult = re.search(self._regex_dict[key], buffer)
+
+            if regexresult:
+                # length of groups will indicate last item to group and return
+                num_groups = len(regexresult.groups())
+                returndict[key] = regexresult.group(num_groups)
+
+        # print "Keys: %s" % (returndict)
+        return returndict
 
 # def test_parse_extract():
 #     buffer = """
@@ -132,13 +166,13 @@ class ParseExtract(object):
 #         by the user
 #     """
 #     parse = ParseExtract()
-#      
+#
 #     parse.addparser('james', 'hi.this.*(ja.es)')
 #     parse.addparser('version', 'version.=.(.*)')
 #     parse.addparser('module', 'module')
-#      
+#
 #     print parse.extract(buffer, 'james', 'version', 'module')
-#      
+#
 # test_parse_extract()
 
 
@@ -152,6 +186,8 @@ class CommandObject(object):
     prompt = None
     buffer = None
 
+    parseex = None
+
     def __init__(self, cmdstr, timeout, prompt):
         """
         Command Object 
@@ -164,4 +200,22 @@ class CommandObject(object):
         """
         Get Command
         """
-        return {"cmd": self.cmdstr, "timeout": self.timeout, "prompt": self.prompt}
+        cmdobj = {}
+        cmdobj["cmd"] = self.cmdstr
+        cmdobj["timeout"] = self.timeout
+        cmdobj["prompt"] = self.prompt
+        if self.parseex is not None:
+            cmdobj["parseext"] = self.parseex
+        return cmdobj
+
+    def addParseExtract(self, parseex):
+        """
+        Adds parse extract object
+        + parseex
+        """
+        self.parseex = parseex
+
+    def getParseExtract(self):
+        """
+        """
+        return self.parseex

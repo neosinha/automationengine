@@ -10,6 +10,7 @@ from AutoEngine.SwitchPlatform import SwitchPlatform
 import argparse
 import sys
 import time
+import cmd
 
 
 class AutomationApplication(object):
@@ -41,6 +42,23 @@ class AutomationApplication(object):
             stepObj = self.uut.getAutoSequenceSteps()[stepName]
             for step, cmdobj in stepObj.getSequenceSteps().items():
                 print "\tCommandObj: %s, %s" % (step, cmdobj.getCommand())
+                print "==> %s" % (cmdobj.getCommand())
+                data = cmdobj.getCommand()['cmd']
+                matchlist = [cmdobj.getCommand()['prompt']]
+                timeout = cmdobj.getCommand()['timeout']
+                resp = self.tsession.sendexpect(data=data,
+                                                matchlist=matchlist,
+                                                timeout=timeout)
+                if 'parseext' in cmdobj.getCommand():
+                    pext = cmdobj.getCommand()['parseext']
+                    pext.extractkeys(resp['buffer'])
+
+                # print buff['timeout_occured']
+                # print buff['buffer']
+                cmdobj = {'cmdobject': cmdobj.getCommand(), 'response': resp}
+                print "==> %s" % (cmdobj)
+                # self.logger.logcmd(cmdobj)
+
                 # print "%s " %
                 # (self.uut.getAutoSequenceSteps()[stepName].getCommand())
 

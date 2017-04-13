@@ -4,7 +4,7 @@ Created on Mar 30, 2017
 @author: nsinha
 '''
 from AutoEngine.Design import Design
-from AutoEngine.AutomationSequence import CommandObject
+from AutoEngine.AutomationSequence import CommandObject, ParseExtract
 from AutoEngine.AutomationSequence import SequenceStep
 
 
@@ -27,8 +27,8 @@ class SwitchPlatform(Design):
         self.setProcessIdentifierName("partnum")
 
         # self.__init_processes()
-        self.loadCommands()
-        self.defineTestSteps()
+        # self.loadCommands()
+        self.versionCheckSteps()
 
     def __init_processes(self):
         """
@@ -45,8 +45,17 @@ class SwitchPlatform(Design):
                                 CommandObject(cmdstr='en', timeout=3, prompt='NetIron.*>'))
         seqStep.addSequenceStep("Goto Pageless",
                                 CommandObject(cmdstr='skip', timeout=3, prompt='NetIron.*#'))
-        seqStep.addSequenceStep("Show chassis",
-                                CommandObject(cmdstr='show chassis', timeout=3, prompt='NetIron.*#'), )
+
+        pext = ParseExtract('version', 'IronWare.:.Version(.*)Copyright')
+        pext.addparser('mbridge', 'MBRIDGE.Revision.:.(.*)')
+        pext.addparser('serialnum', 'Module.Active..Serial #:\s(.*),')
+
+        # define the show version command
+        cmdObj = CommandObject(cmdstr='show version',
+                               timeout=3, prompt='NetIron.*#')
+        cmdObj.addParseExtract(pext)
+        seqStep.addSequenceStep("Show Version", cmdObj)
+
         self.autoSequenceSteps["versioncheck"] = seqStep
 
     def loadCommands(self):

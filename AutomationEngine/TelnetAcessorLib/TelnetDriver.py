@@ -11,6 +11,7 @@ import time
 import datetime
 import re
 
+
 class TelnetDriver(object):
     '''
     Wrapper for telnetlib. Shouldn't be called directly, use TelnetAccessor
@@ -42,7 +43,8 @@ class TelnetDriver(object):
         self._ip = console.split(':')[0]
         self._port = int(console.split(':')[1])
 
-        self.debug("Attempting to open connection with IP: '%s' Port: '%s'" % (self._ip, self._port))
+        self.debug("Attempting to open connection with IP: '%s' Port: '%s'" % (
+            self._ip, self._port))
         self.t.open(self._ip, self._port)
         self.debug("Session opened!")
 
@@ -128,7 +130,7 @@ class TelnetDriver(object):
                 # last line is appended to start of first line of next buf
                 for i in range(len(buf_list)):
                     # don't append last item
-                    if i < last_idx:                     
+                    if i < last_idx:
                         running_buf[tidx][timestamp].append(buf_list[i])
 
                     # iterate thru matchlist to look for matches in this line
@@ -141,12 +143,12 @@ class TelnetDriver(object):
                             return {'buffer': running_buf,
                                     'xtime': self.get_time() - start_time,
                                     'midx': idx,
-                                    'mobj': mobj} 
+                                    'mobj': mobj}
 
                 tidx += 1
 
-        xtime = self.get_time()() - start_time
-        return {'buffer': running_buf, 'xtime': xtime, 'midx': midx, 'mobj': mobj}     
+        xtime = self.get_time() - start_time
+        return {'buffer': running_buf, 'xtime': xtime, 'midx': midx, 'mobj': mobj}
 
     def close(self):
         """

@@ -9,6 +9,7 @@ Created on Mar 23, 2017
 import TelnetDriver
 import time
 
+
 class TelnetAccessor(object):
     """
     Encompasses Send, Expect, SendExpect, Logging to DB with Timestamp
@@ -24,7 +25,6 @@ class TelnetAccessor(object):
 
     def open_console(self, console):
         self.t.open(console)
-
 
     def close_console(self, console):
         self.t.close(console)
@@ -132,7 +132,7 @@ class TelnetAccessor(object):
     def __debug_expect(self, exp_retrn_dict):
         """
         Print out expect return values
-        """        
+        """
         self.t.set_debug_flag(True)
         self.t.debug('------------------------------')
         for key, value in exp_retrn_dict.iteritems():
@@ -151,8 +151,10 @@ class TelnetAccessor(object):
 
         for cmd_dict_list in buflist:
             # connect cmd sequence lastline w/ firstline
-            cmd_dict_list[0].values()[0][0] = lastline + cmd_dict_list[0].values()[0][0]
-            # get lastline of cmd sequence to tie to first line of next sequence
+            cmd_dict_list[0].values()[0][0] = lastline + \
+                cmd_dict_list[0].values()[0][0]
+            # get lastline of cmd sequence to tie to first line of next
+            # sequence
             lastline = cmd_dict_list[-1].values()[0].pop()
 
             for bufobj in cmd_dict_list:
@@ -160,8 +162,9 @@ class TelnetAccessor(object):
                     for idx in range(len(buf_list)):
                         print '%s\t%s' % (timestamp, buf_list[idx])
 
-        # don't forget to print lastline that we are storing               
+        # don't forget to print lastline that we are storing
         print '%s\t%s' % (timestamp, lastline)
+
 
 def logmsg(msg):
     """
@@ -194,7 +197,7 @@ def test(console='10.31.248.186:3016'):
     # prints output of all expect return values
     # to provide support for debugging
     debugFlag = False
-    
+
     session = TelnetAccessor(debugFlag=debugFlag)
     session.open_console(console)
 
@@ -209,11 +212,11 @@ def test(console='10.31.248.186:3016'):
 
     data_list = ['exit', 'en', 'skip', 'show version']
 
-    results = session.sendexpect_list(data_list, ['not_a_match', 'Router'], timeout=15, debug=debugFlag)
+    results = session.sendexpect_list(
+        data_list, ['not_a_match', 'Router'], timeout=15, debug=debugFlag)
 
     session.print_log_with_timestamps(results)
 
     usermsg('Done!')
     logmsg('Done!')
-
-test()
+# test()
