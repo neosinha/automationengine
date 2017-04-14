@@ -63,17 +63,17 @@ class SequenceStep(object):
         return self.__cmdObject
 
 
-class ParseExtract(object):
+class ParseEngine(object):
     """
     Handle buffer parsing from pre-defined
     regular expressions
     """
-    _regex_dict = {}
+    _parse_dict = {}
     
     def __init__(self):
         pass
     
-    def addparser(self, key, regex):
+    def addparser(self, key, regex=None, known_val=None):
         """
         Add regular expression to be stored
         and called upon during parsing activity.
@@ -81,16 +81,23 @@ class ParseExtract(object):
         After defining regex, use extract for matching
         
         + key - name of regex
-        - regex - regular expression
+        + regex - regular expression of item to search for
+        + known_val - value to compare against
         """
-        self._regex_dict[key] = re.compile(regex)
-        
+        self._parse_dict[key] = {
+                'regex': regex, 'found_val': None, 'known_val': known_val, 'match': False}
+
     def extract(self, buffer, *keys):
         """
         Extract regex from buffer from predefined
         key using re.search()
         
-        Returns dictionary in format of {key: matchtext}
+        Returns dictionary in format of
+            {key: {
+                   'mtext': None, - string (matched text)
+                   'result': False - boolean (True/False)
+                   }
+                }
         
         If regex included group(s), matchtext will be last
         group matched
@@ -98,39 +105,50 @@ class ParseExtract(object):
         returndict = {}
 
         for key in keys:
-            returndict[key] = None
-
-            if key not in self._regex_dict:
+            if key not in self._parse_dict:
                 continue
 
-            regexresult = re.search(self._regex_dict[key], buffer)
+            returndict[key] = {'mtext': None, 'result': False}
+
+            d = self._parse_dict[key]
+
+            regexresult = re.search(d['regex'], buffer)
 
             if regexresult:
                 # length of groups will indicate last item to group and return
                 num_groups = len(regexresult.groups())
-                returndict[key] = regexresult.group(num_groups)
+                mtext = regexresult.group(num_groups)
+
+                returndict[key]['mtext'] = mtext
+
+                if str(mtext) == str(d['known_val']):
+                    returndict[key]['result'] = True
 
         return returndict
 
 
-# def test_parse_extract():
-#     buffer = """
-#         hi this is james and this
-#         is my test_parse_extract module code.
-#         version = 10.125.3:A2
-#         we can create regex's and take action
-#         based on the key value defined
-#         by the user
-#     """
-#     parse = ParseExtract()
-#      
-#     parse.addparser('james', 'hi.this.*(ja.es)')
-#     parse.addparser('version', 'version.=.(.*)')
-#     parse.addparser('module', 'module')
-#      
-#     print parse.extract(buffer, 'james', 'version', 'module')
-#      
-# test_parse_extract()
+def test_parse_extract():
+    buffer = """
+        hi this is james and this
+        is my test_parse_extract module code.
+        version = 10.125.3:A2
+        we can create regex's and take action
+        based on the key value defined
+        by the user
+    """
+    parse = ParseEngine()
+
+    parse.addparser('james', 'hi.this.*(ja.es)')
+    parse.addparser('module', 'module')
+    parse.addparser('version', 'version.=.(.*)', '10.125.3:A2')
+
+    result = parse.extract(buffer, 'james', 'version', 'module')
+
+    for key, val in result.iteritems():
+        print key, val
+
+if __name__ == "__main__":
+    test_parse_extract()
 
 
 class CommandObject(object):
