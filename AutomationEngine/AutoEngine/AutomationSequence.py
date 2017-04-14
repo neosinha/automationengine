@@ -84,12 +84,17 @@ class ParseExtract(object):
     """
     _regex_dict = {}
     _expect_dict = {}
+    _callback_dict = {}
 
-    def __init__(self, key=None, regex=None, expect=None):
+    def __init__(self, key=None, regex=None, expect=None, matchcallback=None, notmatchcallback=None):
         if key is not None:
             self._regex_dict[key] = regex
             if expect is not None:
                 self._expect_dict[key] = expect
+                if matchcallback is not None:
+                    self._callback_dict["True"] = matchcallback
+                if notmatchcallback is not None:
+                    self._callback_dict["False"] = notmatchcallback
 
     def getparseextract(self):
         """
@@ -97,7 +102,7 @@ class ParseExtract(object):
         """
         return self._regex_dict
 
-    def addparser(self, key, regex, expect):
+    def addparser(self, key, regex, expect, matchcallback=None, notmatchcallback=None):
         """
         Add regular expression to be stored
         and called upon during parsing activity.
@@ -109,6 +114,10 @@ class ParseExtract(object):
         """
         self._regex_dict[key] = re.compile(regex)
         self._expect_dict[key] = expect
+        if matchcallback is not None:
+            self._callback_dict["True"] = matchcallback
+        if notmatchcallback is not None:
+            self._callback_dict["False"] = notmatchcallback
 
     def extract(self, buffer, *keys):
         """
@@ -159,13 +168,22 @@ class ParseExtract(object):
                 if regexresult.group(num_groups) == self._expect_dict[key]:
                     matchState = True
 
-                returndict[key] = {
-                    'value': str(regexresult.group(num_groups)).strip(),
-                    'match': matchState
-                }
+                callbackkey = str(matchState)
+                print "CallBackKey: %s" % (callbackkey)
+                # contrsuct a dict
+                keyobj = {}
+                keyobj['value'] = str(regexresult.group(num_groups)).strip()
+                keyobj['match'] = matchState
 
-        print "Keys: %s" % (returndict)
+                if 'True' in self._callback_dict:
+                    keyobj['callback'] = self._callback_dict['True']
+                if 'False' in self._callback_dict:
+                    keyobj['callback'] = self._callback_dict['False']
+                returndict[key] = keyobj
+
+        # print "Keys: %s" % (returndict)
         return returndict
+
 
 # def test_parse_extract():
 #     buffer = """

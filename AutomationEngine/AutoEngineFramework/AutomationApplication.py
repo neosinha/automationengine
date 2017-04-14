@@ -51,8 +51,8 @@ class AutomationApplication(object):
                                                 timeout=timeout)
                 if 'parseext' in cmdobj.getCommand():
                     pext = cmdobj.getCommand()['parseext']
-                    pext.extractkeys(resp['buffer'])
-
+                    pextr = pext.extractkeys(resp['buffer'])
+                    print "Pext: %s==> " % (pextr)
                 # print buff['timeout_occured']
                 # print buff['buffer']
                 cmdobj = {'cmdobject': cmdobj.getCommand(), 'response': resp}

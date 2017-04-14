@@ -37,6 +37,11 @@ class SwitchPlatform(Design):
         for pname in self.getProcessNames():
             self.autoSequenceSteps[pname] = []
 
+    def versionCheckPassed(self):
+        """
+        """
+        print "Version Check Callback"
+
     def versionCheckSteps(self):
         """
         """
@@ -47,7 +52,7 @@ class SwitchPlatform(Design):
                                 CommandObject(cmdstr='skip', timeout=3, prompt='NetIron.*#'))
 
         pext = ParseExtract(
-            'version', 'IronWare.:.Version(.*)Copyright', '5.7.0bT163')
+            'version', 'IronWare.:.Version(.*)Copyright', '5.7.0bT163', matchcallback="versionCheckPassed")
         pext.addparser('mbridge', 'MBRIDGE.Revision.:.(.*)', '37')
         pext.addparser(
             'serialnum', 'Module.Active..Serial #:\s(.*),',
