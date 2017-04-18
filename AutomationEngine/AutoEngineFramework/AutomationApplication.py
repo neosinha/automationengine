@@ -11,6 +11,7 @@ import argparse
 import sys
 import time
 import cmd
+import pprint
 
 
 class AutomationApplication(object):
@@ -49,12 +50,19 @@ class AutomationApplication(object):
                 resp = self.tsession.sendexpect(data=data,
                                                 matchlist=matchlist,
                                                 timeout=timeout)
+
                 if 'parseext' in cmdobj.getCommand():
                     pext = cmdobj.getCommand()['parseext']
                     pextr = pext.extractkeys(resp['buffer'])
                     print "Pext: %s==> " % (pextr)
-                # print buff['timeout_occured']
-                # print buff['buffer']
+
+                    for key, pobj in pextr.items():
+                        print "=======> %s" % (pobj)
+                        if 'callback' in pobj:
+                            print "Found Callback function %s" % (pobj['callback'])
+                            callbackfunc = pobj['callback']
+                            callbackfunc(resp['buffer'])
+
                 cmdobj = {'cmdobject': cmdobj.getCommand(), 'response': resp}
                 print "==> %s" % (cmdobj)
                 # self.logger.logcmd(cmdobj)
@@ -75,6 +83,12 @@ class AutomationApplication(object):
             # cmdobj = {'cmdobject': cmd.getCommand(), 'response': resp}
             # print "==> %s" % (cmdobj)
             # self.logger.logcmd(cmdobj)
+
+    def abort(self):
+        """
+        Aborting Test
+        """
+
 
 if __name__ == "__main__":
 

@@ -3,7 +3,7 @@ Process automation is often based on performing tests on CLIs. CLI interaction a
 
 ***
 
-AutomationEngine combines three key concepts/elements needed for any automation platform Python, 
+AutomationEngine combines four key concepts/elements needed for any automation platform Python, 
  * CLI Driver
  * Tests 
  * Logging

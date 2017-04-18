@@ -4,7 +4,8 @@ Created on Mar 30, 2017
 @author: nsinha
 '''
 from AutoEngine.Design import Design
-from AutoEngine.AutomationSequence import CommandObject, ParseExtract
+from AutoEngine.AutomationSequence import CommandObject
+from AutoEngine.AutomationSequence import ParseEngine
 from AutoEngine.AutomationSequence import SequenceStep
 
 
@@ -37,10 +38,11 @@ class SwitchPlatform(Design):
         for pname in self.getProcessNames():
             self.autoSequenceSteps[pname] = []
 
-    def versionCheckPassed(self):
+    def versionCheckPassed(self, response):
         """
         """
         print "Version Check Callback"
+        print "===Processing buffer==\n%s" % (response)
 
     def versionCheckSteps(self):
         """
@@ -51,8 +53,8 @@ class SwitchPlatform(Design):
         seqStep.addSequenceStep("Goto Pageless",
                                 CommandObject(cmdstr='skip', timeout=3, prompt='NetIron.*#'))
 
-        pext = ParseExtract(
-            'version', 'IronWare.:.Version(.*)Copyright', '5.7.0bT163', matchcallback="versionCheckPassed")
+        pext = ParseEngine(
+            'version', 'IronWare.:.Version(.*)Copyright', '5.7.0bT163', matchcallback=self.versionCheckPassed)
         pext.addparser('mbridge', 'MBRIDGE.Revision.:.(.*)', '37')
         pext.addparser(
             'serialnum', 'Module.Active..Serial #:\s(.*),',
