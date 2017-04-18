@@ -77,7 +77,7 @@ class SequenceStep(object):
         return self.__cmdObject
 
 
-class ParseExtract(object):
+class ParseEngine(object):
     """
     Handle buffer parsing from pre-defined
     regular expressions
