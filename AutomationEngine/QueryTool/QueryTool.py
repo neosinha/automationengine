@@ -12,7 +12,7 @@ History:
 from pymongo import MongoClient
 import cherrypy as QueryServer
 import json
-
+import os
 
 class QueryTool(object):
     """
@@ -23,11 +23,12 @@ class QueryTool(object):
     _db = None
     client = None
 
-    def __init__(self, dbaddress="10.30.5.203:27017"):
+    def __init__(self, dbaddress="10.30.5.203:27017", path=None):
         """
         Constructor/Intiliazer
         + dbaddress - MongoDB IP
         """
+        self.path = path
 
         if (dbaddress == None):
             self._dbaddress = "127.0.0.1:27017"
@@ -36,6 +37,16 @@ class QueryTool(object):
 
         address, port = self._dbaddress.split(':', 2)
         self.client = MongoClient(address, int(port))
+
+
+    @QueryServer.expose
+    def index(self):
+        """
+        This function initializes index.html
+        """
+        print "This is the path -->"
+        print self.path
+        return open(os.path.join(self.path, "index.html"))
 
 
     @QueryServer.expose
