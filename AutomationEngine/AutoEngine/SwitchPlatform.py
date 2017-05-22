@@ -73,7 +73,6 @@ class SwitchPlatform(Design):
         Sample function which loads commands either from a db 
         File or just explictly specifies it..
         """
-
         self.commands.append(
             CommandObject(cmdstr='en', timeout=3, prompt='NetIron.*>'))
         self.commands.append(

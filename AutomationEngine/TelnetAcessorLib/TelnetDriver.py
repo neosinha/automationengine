@@ -110,6 +110,7 @@ class TelnetDriver(object):
             compiled_regex.append(re.compile(regex))
 
         start_time = self.get_time()
+        mobj = None
         while self.get_time() - start_time < timeout:
             buf = self.t.read_very_eager()
             if buf:

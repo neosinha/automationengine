@@ -35,7 +35,8 @@ class Design(object):
         # Adds the default process ids
 
         for sproc in sprocess:
-            self.__processList.append(sproc)
+            if sproc not in self.__processList:
+                self.__processList.append(sproc)
 
     def addProcessName(self, processName):
         """
