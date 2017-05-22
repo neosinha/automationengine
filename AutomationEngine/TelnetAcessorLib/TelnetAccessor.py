@@ -8,6 +8,7 @@ Created on Mar 23, 2017
 
 import TelnetDriver
 import time
+import os
 
 
 class TelnetAccessor(object):
