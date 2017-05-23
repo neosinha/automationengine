@@ -8,7 +8,6 @@ Created on Mar 23, 2017
 
 import TelnetDriver
 import time
-import os
 
 
 class TelnetAccessor(object):
@@ -17,18 +16,22 @@ class TelnetAccessor(object):
     """
     matchobj = None
 
-    def __init__(self, debugFlag=False):
+    def __init__(self, mqtt_id=None, qos=1, debugFlag=False):
         """
         Instantiate TelnetDriver Class
+        + mqtt_id - identifier for MQTT client to launch
+                  - if None, no Client will launch
+        + qos - Quality of service for mqtt range int([0, 2])
+        + loc - string location of test being executed. e.g. 'SAN JOSE'
         + debugFlag - enable debug messaging
         """
-        self.t = TelnetDriver.TelnetDriver(debugFlag=debugFlag)
+        self.t = TelnetDriver.TelnetDriver(mqtt_id=mqtt_id, debugFlag=debugFlag)
 
     def open_console(self, console):
         self.t.open(console)
 
-    def close_console(self, console):
-        self.t.close(console)
+    def close_console(self):
+        self.t.close()
 
     def send(self, data):
         """
@@ -161,10 +164,10 @@ class TelnetAccessor(object):
             for bufobj in cmd_dict_list:
                 for timestamp, buf_list in bufobj.iteritems():
                     for idx in range(len(buf_list)):
-                        print '%s\t%s' % (timestamp, buf_list[idx])
+                        print '%s\t%r' % (timestamp, buf_list[idx])
 
         # don't forget to print lastline that we are storing
-        print '%s\t%s' % (timestamp, lastline)
+        print '%s\t%r' % (timestamp, lastline)
 
 
 def logmsg(msg):
@@ -191,33 +194,69 @@ def gettimestamp():
     return int(time.time() * 1000)
 
 
-def test(console='10.31.248.186:3016'):
+def test(console='10.31.248.147:3009'):
     usermsg('Testing User Message!')
     logmsg('Testing log Message!')
 
     # prints output of all expect return values
     # to provide support for debugging
     debugFlag = False
+    data_list = ['exit', 'en', 'skip', 'show version']
 
-    session = TelnetAccessor(debugFlag=debugFlag)
+#     session = TelnetAccessor(debugFlag=debugFlag)
+#     session.open_console(console)
+#  
+#     logmsg('Testing sendexpect_list...')
+#  
+#     results = session.sendexpect_list(
+#         data_list, ['not_a_match', 'Router', 'NetIron\sCE[SR]\s2024[CF].4X'], timeout=15, debug=debugFlag)
+#  
+#     session.print_log_with_timestamps(results)
+#  
+#     session.close_console()
+# 
+#     """
+#     Testing MQTT integration now with same series
+#     """
+#     print '###############################################################'
+#     print '#                  STARTING A TIMEOUT TEST                         #'
+#     print '###############################################################'
+# 
+#     session = TelnetAccessor(debugFlag=debugFlag)
+#     session.open_console(console)
+#  
+#     logmsg('Testing sendexpect_list assuming timeouts...')
+#  
+#     results = session.sendexpect_list(
+#         data_list, ['not_a_match', 'Router'], timeout=10, debug=debugFlag)
+#  
+#     session.print_log_with_timestamps(results)
+#  
+#     session.close_console()
+
+    """
+    Testing MQTT integration now with same series
+    """
+    print '###############################################################'
+    print '#                  STARTING MQTT TEST                         #'
+    print '###############################################################'
+
+    session = TelnetAccessor(mqtt_id='ABC123', qos=1, debugFlag=debugFlag)
     session.open_console(console)
-
-    logmsg('Testing regular sendexpect...')
-
-    #result = session.sendexpect('exit\r', '4X', debug=debugFlag)
-    #result = session.sendexpect('en\r', '4X', debug=debugFlag)
-    #result = session.sendexpect('skip\r', '4X', debug=debugFlag)
-    #result = session.sendexpect('show media\r', '4X', timeout=5, debug=debugFlag)
 
     logmsg('Testing sendexpect_list...')
 
-    data_list = ['exit', 'en', 'skip', 'show version']
+    for i in range(20):
+        results = session.sendexpect_list(
+            data_list, ['not_a_match', 'Router', 'NetIron\sCE[SR]\s2024[CF].4X'], timeout=15, debug=debugFlag)
+        time.sleep(3)
 
-    results = session.sendexpect_list(
-        data_list, ['not_a_match', 'Router'], timeout=15, debug=debugFlag)
+    # session.print_log_with_timestamps(results)
 
-    session.print_log_with_timestamps(results)
+    session.close_console()
 
     usermsg('Done!')
     logmsg('Done!')
-# test()
+
+if __name__ == "__main__":
+    test()

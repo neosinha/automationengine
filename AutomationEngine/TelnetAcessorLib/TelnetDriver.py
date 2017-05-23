@@ -10,6 +10,13 @@ import telnetlib
 import time
 import datetime
 import re
+import paho.mqtt.client as mqtt
+import copy
+import json
+
+BROKER_ADD = 'broker.mqttdashboard.com'
+# BROKER_ADD = '10.130.41.48'
+BROKER_PORT = 1883
 
 
 class TelnetDriver(object):
@@ -18,17 +25,34 @@ class TelnetDriver(object):
     '''
     _ip = None
     _port = None
+    mqtt_client = None
+    mqtt_id = None
+    qos = None
+    topic = None
 
-    def __init__(self, console=None, debugFlag=False):
+    def __init__(self, mqtt_id=None, qos=0, debugFlag=False):
         '''
         Pass console, return telnet session
         + console - (optional) format <ip>:<port> e.g. '192.168.1.1:3003'
+        + qos - Quality of service for mqtt range int([0, 2])
+        + mqtt_id - identifier for MQTT client to launch on 'open' call
+                  - if None, no Client will launch
+        + loc - string location of test being executed. e.g. 'SAN JOSE'
         + debugFlag - enables debug messaging
         '''
         self.debugFlag = debugFlag
         self.debug('Hello (telnet) World')
-        if console:
-            self.open(console)
+
+        self.mqtt_id = mqtt_id
+        self.qos = qos
+        self.topic = '%s/console' % mqtt_id
+
+    def _on_message(self, client, userdata, msg):
+        # not expecting to receive any messages 
+        pass
+
+    def _on_message(self, client, userdata, msg):
+        pass
 
     def set_debug_flag(self, flag):
         """
@@ -47,6 +71,27 @@ class TelnetDriver(object):
             self._ip, self._port))
         self.t.open(self._ip, self._port)
         self.debug("Session opened!")
+
+        self.init_mqtt(console)
+
+    def init_mqtt(self, console):
+        if self.mqtt_id:
+            userdata = {'process_id': self.mqtt_id,
+                        'console_ip': console,
+                        'timezone': time.strftime("%z", time.gmtime()),
+                        'start_time': self.get_time()}
+            self.mqtt_client = mqtt.Client(userdata=userdata)
+            self.mqtt_client.on_connect = self._on_connect
+            self.mqtt_client.on_message = self._on_message
+
+            self.mqtt_client.connect(BROKER_ADD, BROKER_PORT)
+
+    def _on_connect(client, userdata, rc):
+        print("MQTT Client [%s] connected with result code %s" % (
+                userdata['process_id'], str(rc)))
+
+    def _on_message(client, userdata, msg):
+        print('Received message! [Thread: %s] %s' % (msg.topic, msg.payload))
 
     def send(self, data):
         """
@@ -103,6 +148,7 @@ class TelnetDriver(object):
         midx = -1
         # index of timestamp we are iterating with
         tidx = 0
+        timestamp = self.get_time()
 
         # compile regex's once to save processing
         compiled_regex = []
@@ -110,7 +156,6 @@ class TelnetDriver(object):
             compiled_regex.append(re.compile(regex))
 
         start_time = self.get_time()
-        mobj = None
         while self.get_time() - start_time < timeout:
             buf = self.t.read_very_eager()
             if buf:
@@ -126,6 +171,12 @@ class TelnetDriver(object):
                 # buffer to remember
                 timestamp = self.get_time()
                 running_buf.append({timestamp: []})
+
+                # send to MQTT - format {'epoch': timestamp, 'console': payload}
+                payload = copy.deepcopy(buf_list)
+                payload.pop()
+                self.mqtt_publish({'epoch': timestamp, 'console': payload})
+
                 # search each line in most recent buf for regex match
                 # don't search last line because it is incomplete,
                 # last line is appended to start of first line of next buf
@@ -133,7 +184,6 @@ class TelnetDriver(object):
                     # don't append last item
                     if i < last_idx:
                         running_buf[tidx][timestamp].append(buf_list[i])
-
                     # iterate thru matchlist to look for matches in this line
                     for idx in range(len(compiled_regex)):
                         # compute regex
@@ -141,6 +191,9 @@ class TelnetDriver(object):
                         if mobj:
                             # don't forget to append last line we were saving
                             running_buf[tidx][timestamp].append(last_line_buf)
+                            # don't forget to 'send' last line over mqtt
+                            self.mqtt_publish({'epoch': timestamp, 'console': [last_line_buf]})
+
                             return {'buffer': running_buf,
                                     'xtime': self.get_time() - start_time,
                                     'midx': idx,
@@ -148,8 +201,25 @@ class TelnetDriver(object):
 
                 tidx += 1
 
-        xtime = self.get_time() - start_time
-        return {'buffer': running_buf, 'xtime': xtime, 'midx': midx, 'mobj': mobj}
+        # if we get here, we have a TIMEOUT
+        # don't forget to append last line we were saving;
+        # tidx was over incremented above
+        tidx -= 1
+        running_buf[tidx][timestamp].append(last_line_buf)
+
+        self.mqtt_publish({'epoch': timestamp, 'console': [last_line_buf]})
+
+        return {'buffer': running_buf,
+                'xtime': self.get_time() - start_time,
+                'midx': midx,
+                'mobj': None}
+
+    def mqtt_publish(self, payload):
+        """
+        Push payload over defined mqtt client/thread in json format
+        """
+        if self.mqtt_client:
+            self.mqtt_client.publish(self.topic, json.dumps(payload), self.qos)
 
     def close(self):
         """
